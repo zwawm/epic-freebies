@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Epic 周免助手</h1>
+  <h1>Epic 周免领取助手</h1>
   <p>An Epic Games weekly-freebies claimer for GitHub Actions.</p>
 
   <p>
@@ -129,12 +129,14 @@ All week-free games are already in the library
 3. 找到 `Artifacts`
 4. 下载 zip 文件
 
-下载后建议先看下面两个目录：
+说明：
 
-| 目录 | 用途 |
+| 文件包 | 先看什么 |
 | --- | --- |
-| `app/volumes/runtime/purchase_debug/` | 看页面截图和中间状态 |
-| `app/volumes/logs/` | 看完整运行日志 |
+| `epic-runtime-<run_id>.zip` | 解压后优先看 `purchase_debug/` 里的截图和调试文本 |
+| `epic-logs-<run_id>.zip` | 解压后直接看里面的日志文件 |
+
+这些内容是 GitHub Actions 每次运行后打包上传的产物，不是仓库根目录里预置好的固定目录。
 
 ---
 

@@ -117,9 +117,9 @@ uv run ruff check --fix
 
 | 文件 | 作用 |
 | --- | --- |
-| `app/volumes/runtime/purchase_debug/*.png` | 看页面实际长什么样 |
-| `app/volumes/runtime/purchase_debug/*.txt` | 看页面文本和 frame 内容 |
-| `app/volumes/logs/` | 看完整执行链路 |
+| `epic-runtime-<run_id>` 解压后的 `purchase_debug/*.png` | 看页面实际长什么样 |
+| `epic-runtime-<run_id>` 解压后的 `purchase_debug/*.txt` | 看页面文本和 frame 内容 |
+| `epic-logs-<run_id>` 解压后的日志文件 | 看完整执行链路 |
 
 如果没有这些 artifact，很多 checkout 问题只能靠猜。
 
