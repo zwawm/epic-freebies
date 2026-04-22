@@ -266,6 +266,9 @@ class _GLMAsyncModels:
         if temperature is not None:
             payload["temperature"] = temperature
 
+        if getattr(config, "response_schema", None) is not None:
+            payload["response_format"] = {"type": "json_object"}
+
         if getattr(config, "thinking_config", None) is not None and model.startswith("glm-4.5"):
             payload["thinking"] = {"type": "enabled"}
 
@@ -300,6 +303,7 @@ class _GLMAsyncModels:
         try:
             payload = _normalize_glm_payload(_extract_json_payload(text))
         except Exception:
+            logger.warning("GLM structured parse fallback failed | raw_text={}", text[:500])
             return None
 
         if isinstance(schema, type) and issubclass(schema, BaseModel):

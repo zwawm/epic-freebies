@@ -84,6 +84,7 @@ class EpicSettings(AgentConfig):
     EPIC_EMAIL: str = Field(default_factory=lambda: _env("EPIC_EMAIL"))
     EPIC_PASSWORD: SecretStr = Field(default_factory=lambda: _env("EPIC_PASSWORD"))
     DISABLE_BEZIER_TRAJECTORY: bool = Field(default=True)
+    WAIT_FOR_CHALLENGE_VIEW_TO_RENDER_MS: int = Field(default=3000)
 
     CHALLENGE_CLASSIFIER_MODEL: str = Field(
         default_factory=lambda: _task_model("CHALLENGE_CLASSIFIER_MODEL", "gemini-2.5-flash")

@@ -489,6 +489,7 @@ class EpicGames:
 
             logger.info(f"Solving checkout security check ({attempt}/{max_attempts})")
             await self._capture_purchase_debug(page, f"checkout_security_check_attempt_{attempt}", url)
+            await page.wait_for_timeout(2500)
 
             try:
                 await agent.wait_for_challenge()
