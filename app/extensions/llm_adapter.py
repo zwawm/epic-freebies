@@ -3,6 +3,7 @@ import base64
 import json
 import mimetypes
 import re
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -286,6 +287,41 @@ class _GLMAsyncModels:
 
         return payload
 
+    def _log_glm_error(self, response: httpx.Response):
+        body = response.text[:2000]
+        code = ""
+        message = ""
+        with suppress(Exception):
+            payload = response.json()
+            error = payload.get("error") or {}
+            code = str(error.get("code") or "")
+            message = str(error.get("message") or "")
+
+        if response.status_code == 429 or code in {"1302", "1303", "1304", "1308", "1113"}:
+            logger.error(
+                "GLM quota/rate limit issue | http_status={} | code={} | message={}",
+                response.status_code,
+                code,
+                message or body,
+            )
+            return
+
+        if response.status_code in {401, 403} or code in {"1000", "1001", "1002", "1003", "1004"}:
+            logger.error(
+                "GLM auth issue | http_status={} | code={} | message={}",
+                response.status_code,
+                code,
+                message or body,
+            )
+            return
+
+        logger.error(
+            "GLM request failed | status={} | code={} | body={}",
+            response.status_code,
+            code,
+            body,
+        )
+
     async def generate_content(self, model: str, contents: Any, **kwargs) -> _PatchedResponse:
         config = kwargs.pop("config", None)
         if config is None:
@@ -304,11 +340,7 @@ class _GLMAsyncModels:
         async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=30.0)) as client:
             response = await client.post(endpoint, headers=headers, json=payload)
             if response.is_error:
-                logger.error(
-                    "GLM request failed | status={} | body={}",
-                    response.status_code,
-                    response.text[:2000],
-                )
+                self._log_glm_error(response)
                 response.raise_for_status()
             data = response.json()
 
