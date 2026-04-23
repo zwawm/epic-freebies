@@ -155,6 +155,33 @@ def _extract_drag_points_from_text(text: str) -> tuple[dict[str, int], dict[str,
         sx, sy, tx, ty = map(int, source_target_object.groups())
         return ({"x": sx, "y": sy}, {"x": tx, "y": ty})
 
+    source_target_position_array = re.search(
+        r'"source_position"\s*:\s*\[\s*(\d+)\s*,\s*(\d+)\s*\][\s\S]*?"target_position"\s*:\s*\[\s*(\d+)\s*,\s*(\d+)\s*\]',
+        stripped,
+        flags=re.IGNORECASE,
+    )
+    if source_target_position_array:
+        sx, sy, tx, ty = map(int, source_target_position_array.groups())
+        return ({"x": sx, "y": sy}, {"x": tx, "y": ty})
+
+    source_target_position_object = re.search(
+        r'"source_position"\s*:\s*\{\s*"x"\s*:\s*(\d+)\s*,\s*"y"\s*:\s*(\d+)\s*\}[\s\S]*?"target_position"\s*:\s*\{\s*"x"\s*:\s*(\d+)\s*,\s*"y"\s*:\s*(\d+)\s*\}',
+        stripped,
+        flags=re.IGNORECASE,
+    )
+    if source_target_position_object:
+        sx, sy, tx, ty = map(int, source_target_position_object.groups())
+        return ({"x": sx, "y": sy}, {"x": tx, "y": ty})
+
+    source_target_flat = re.search(
+        r'"source_x"\s*:\s*(\d+)\s*,\s*"source_y"\s*:\s*(\d+)[\s\S]*?"target_x"\s*:\s*(\d+)\s*,\s*"target_y"\s*:\s*(\d+)',
+        stripped,
+        flags=re.IGNORECASE,
+    )
+    if source_target_flat:
+        sx, sy, tx, ty = map(int, source_target_flat.groups())
+        return ({"x": sx, "y": sy}, {"x": tx, "y": ty})
+
     source_position = re.search(
         r"Source Position:\s*\((\d+)\s*,\s*(\d+)\)\s*,\s*Target Position:\s*\((\d+)\s*,\s*(\d+)\)",
         stripped,
@@ -331,10 +358,64 @@ def _coerce_payload_for_schema(payload: dict[str, Any], schema: Any, text: str) 
     challenge_prompt = str(payload.get("challenge_prompt") or "")
     inferred_rule = str(payload.get("inferred_rule") or "")
 
-    if "paths" in fields and "paths" in payload:
-        payload.setdefault("challenge_prompt", challenge_prompt)
-        payload.setdefault("inferred_rule", inferred_rule)
-        return payload
+    if "paths" in fields:
+        if "paths" in payload:
+            payload.setdefault("challenge_prompt", challenge_prompt)
+            payload.setdefault("inferred_rule", inferred_rule)
+            return payload
+
+        normalized_drag = None
+        if "source" in payload and "target" in payload:
+            normalized_drag = _build_drag_payload(
+                payload.get("source"),
+                payload.get("target"),
+                challenge_prompt=challenge_prompt,
+                inferred_rule=inferred_rule,
+            )
+        elif "from" in payload and "to" in payload:
+            normalized_drag = _build_drag_payload(
+                payload.get("from"),
+                payload.get("to"),
+                challenge_prompt=challenge_prompt,
+                inferred_rule=inferred_rule,
+            )
+        elif "source_position" in payload and "target_position" in payload:
+            normalized_drag = _build_drag_payload(
+                payload.get("source_position"),
+                payload.get("target_position"),
+                challenge_prompt=challenge_prompt,
+                inferred_rule=inferred_rule,
+            )
+        elif "start" in payload and "end" in payload:
+            normalized_drag = _build_drag_payload(
+                payload.get("start"),
+                payload.get("end"),
+                challenge_prompt=challenge_prompt,
+                inferred_rule=inferred_rule,
+            )
+
+        if not normalized_drag:
+            points_payload = payload.get("points")
+            if isinstance(points_payload, list) and len(points_payload) >= 2:
+                normalized_drag = _build_drag_payload(
+                    points_payload[0],
+                    points_payload[1],
+                    challenge_prompt=challenge_prompt,
+                    inferred_rule=inferred_rule,
+                )
+
+        if not normalized_drag:
+            extracted_drag = _extract_drag_points_from_text(text)
+            if extracted_drag:
+                normalized_drag = _build_drag_payload(
+                    extracted_drag[0],
+                    extracted_drag[1],
+                    challenge_prompt=challenge_prompt,
+                    inferred_rule=inferred_rule,
+                )
+
+        if normalized_drag:
+            return normalized_drag
 
     if "points" in fields:
         if "points" in payload:
@@ -398,6 +479,26 @@ def _normalize_glm_payload(payload: dict[str, Any]) -> dict[str, Any]:
         normalized = _build_drag_payload(
             payload.get("from"),
             payload.get("to"),
+            challenge_prompt=challenge_prompt,
+            inferred_rule=inferred_rule,
+        )
+        if normalized:
+            return normalized
+
+    if "source_position" in payload and "target_position" in payload:
+        normalized = _build_drag_payload(
+            payload.get("source_position"),
+            payload.get("target_position"),
+            challenge_prompt=challenge_prompt,
+            inferred_rule=inferred_rule,
+        )
+        if normalized:
+            return normalized
+
+    if "start" in payload and "end" in payload:
+        normalized = _build_drag_payload(
+            payload.get("start"),
+            payload.get("end"),
             challenge_prompt=challenge_prompt,
             inferred_rule=inferred_rule,
         )
