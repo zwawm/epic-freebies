@@ -21,7 +21,7 @@
 
 还没有智谱账号的话，可以通过这个邀请链接注册：[BigModel.cn 邀请注册链接](https://www.bigmodel.cn/invite?icode=A75tQCByIvrO4k6SLkU5BQZ3c5owLmCCcMQXWcJRS8E%3D)。
 
-社区交流与反馈欢迎前往：[LINUX DO](https://linux.do/t/topic/2033058)。
+社区交流与反馈欢迎前往：[LINUX DO](https://linux.do/t/topic/2036835/4)。
 
 ---
 
@@ -246,7 +246,7 @@ docker compose up -d --build
 | --- | --- |
 | [QIN2DIM/epic-awesome-gamer](https://github.com/QIN2DIM/epic-awesome-gamer) | 原始项目与核心自动化思路来源 |
 | [10000ge10000/epic-kiosk](https://github.com/10000ge10000/epic-kiosk) | GitHub Actions 化和文档组织方式的重要参考 |
-| [LINUX DO](https://linux.do/t/topic/2033058) | 社区交流、反馈与项目推广支持 |
+| [LINUX DO](https://linux.do/t/topic/2036835/4) | 社区交流、反馈与项目推广支持 |
 
 感谢原作者和维护者的工作。
 

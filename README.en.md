@@ -21,7 +21,7 @@ If you choose the `GLM` route, you usually need to complete Zhipu's real-name ve
 
 If you do not have a Zhipu account yet, you can register through this invite link: [BigModel.cn invite link](https://www.bigmodel.cn/invite?icode=A75tQCByIvrO4k6SLkU5BQZ3c5owLmCCcMQXWcJRS8E%3D).
 
-Community discussion and feedback are welcome on [LINUX DO](https://linux.do/t/topic/2033058).
+Community discussion and feedback are welcome on [LINUX DO](https://linux.do/t/topic/2036835/4).
 
 ---
 
@@ -245,7 +245,7 @@ This project is based on `QIN2DIM/epic-awesome-gamer` and also references `10000
 | --- | --- |
 | [QIN2DIM/epic-awesome-gamer](https://github.com/QIN2DIM/epic-awesome-gamer) | Original project and source of the core automation ideas |
 | [10000ge10000/epic-kiosk](https://github.com/10000ge10000/epic-kiosk) | Important reference for GitHub Actions packaging and documentation layout |
-| [LINUX DO](https://linux.do/t/topic/2033058) | Community discussion, feedback, and project promotion support |
+| [LINUX DO](https://linux.do/t/topic/2036835/4) | Community discussion, feedback, and project promotion support |
 
 Thanks to the original authors and maintainers.
 
