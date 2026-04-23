@@ -7,8 +7,11 @@
 """
 import asyncio
 import json
+import os
 import time
 from contextlib import suppress
+
+os.environ.setdefault("MPLBACKEND", "Agg")
 
 from hcaptcha_challenger.agent import AgentV
 from loguru import logger
@@ -70,6 +73,60 @@ class EpicAuthorization:
     def _needs_privacy_policy_correction(self) -> bool:
         return "/id/login/correction/privacy-policy" in self.page.url
 
+    async def _page_body_text(self) -> str:
+        with suppress(Exception):
+            return await self.page.locator("body").inner_text(timeout=1000)
+        return ""
+
+    async def _has_pre_login_security_check(self) -> bool:
+        with suppress(Exception):
+            title = (await self.page.title()).lower()
+            if "just a moment" in title:
+                return True
+
+        body = (await self._page_body_text()).lower()
+        return any(
+            marker in body
+            for marker in (
+                "one more step",
+                "please complete a security check to continue",
+                "verify you are human",
+            )
+        )
+
+    async def _wait_for_login_form(self, point_url: str) -> None:
+        deadline = time.monotonic() + 45
+        recovery_attempts = 0
+        email_input = self.page.locator("#email")
+
+        while time.monotonic() < deadline:
+            with suppress(Exception):
+                await expect(email_input).to_be_visible(timeout=1000)
+                return
+
+            if await self._has_pre_login_security_check():
+                if recovery_attempts < 2:
+                    recovery_attempts += 1
+                    logger.warning(
+                        "Pre-login security page detected, clearing cookies and retrying login entry ({}/2) | url='{}'",
+                        recovery_attempts,
+                        self.page.url,
+                    )
+                    await self.page.context.clear_cookies()
+                    await self.page.goto(point_url, wait_until="domcontentloaded")
+                    continue
+
+                logger.warning(
+                    "Pre-login security page still active after recovery attempts | url='{}'",
+                    self.page.url,
+                )
+                await self.page.wait_for_timeout(2000)
+                continue
+
+            await self.page.wait_for_timeout(500)
+
+        raise PlaywrightTimeoutError("Timed out waiting for Epic login form")
+
     async def _get_login_status(self) -> str | None:
         if self._needs_privacy_policy_correction():
             return None
@@ -93,19 +150,19 @@ class EpicAuthorization:
         try:
             point_url = "https://www.epicgames.com/account/personal?lang=en-US&productName=egs&sessionInvalidated=true"
             await self.page.goto(point_url, wait_until="domcontentloaded")
+            await self._wait_for_login_form(point_url)
 
             # 1. 使用电子邮件地址登录
             email_input = self.page.locator("#email")
-            await email_input.clear()
-            await email_input.type(settings.EPIC_EMAIL)
+            await email_input.fill(settings.EPIC_EMAIL)
 
             # 2. 点击继续按钮
             await self.page.click("#continue")
 
             # 3. 输入密码
             password_input = self.page.locator("#password")
-            await password_input.clear()
-            await password_input.type(settings.EPIC_PASSWORD.get_secret_value())
+            await expect(password_input).to_be_visible(timeout=10000)
+            await password_input.fill(settings.EPIC_PASSWORD.get_secret_value())
 
             # 4. 点击登录按钮，触发人机挑战值守监听器
             # Active hCaptcha checkbox

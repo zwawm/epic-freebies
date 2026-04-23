@@ -2,8 +2,10 @@
 import os
 from pathlib import Path
 
+os.environ.setdefault("MPLBACKEND", "Agg")
+
 from hcaptcha_challenger.agent import AgentConfig
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import SettingsConfigDict
 
 from extensions.llm_adapter import apply_llm_patch
@@ -26,59 +28,48 @@ def _env(name: str, default: str | None = None) -> str | None:
     value = value.strip()
     return value or default
 
-
-def _default_provider() -> str:
-    return _env("LLM_PROVIDER", "glm" if _env("GLM_API_KEY") else "gemini") or "gemini"
-
-
-def _default_model_for_provider(provider: str) -> str:
-    if provider == "glm":
-        return _env("GLM_MODEL", "glm-4.5v") or "glm-4.5v"
-    return _env("GEMINI_MODEL", "gemini-2.5-pro") or "gemini-2.5-pro"
-
-
-def _task_model(name: str, fallback: str) -> str:
-    provider = _default_provider()
-    provider_default = _default_model_for_provider(provider)
-    return _env(name) or provider_default or fallback
-
 # === 配置类定义 ===
 class EpicSettings(AgentConfig):
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
     GEMINI_API_KEY: SecretStr | None = Field(
-        default_factory=lambda: _env("GEMINI_API_KEY") or _env("GLM_API_KEY"),
+        default=None,
         description="Gemini/AiHubMix API key",
     )
 
     GEMINI_BASE_URL: str = Field(
-        default_factory=lambda: _env("GEMINI_BASE_URL", "https://aihubmix.com"),
+        default="https://aihubmix.com",
         description="Gemini/AiHubMix base URL",
     )
 
     GEMINI_MODEL: str = Field(
-        default_factory=lambda: _env("GEMINI_MODEL", "gemini-2.5-pro"),
+        default="gemini-2.5-pro",
         description="Gemini default model",
     )
 
     LLM_PROVIDER: str = Field(
-        default_factory=_default_provider,
+        default="",
         description="Supported values: gemini, glm",
     )
 
     GLM_API_KEY: SecretStr | None = Field(
-        default_factory=lambda: _env("GLM_API_KEY"),
+        default=None,
         description="GLM API key",
     )
 
     GLM_BASE_URL: str = Field(
-        default_factory=lambda: _env("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"),
+        default="https://open.bigmodel.cn/api/paas/v4",
         description="GLM OpenAI-compatible base URL",
     )
 
     GLM_MODEL: str = Field(
-        default_factory=lambda: _env("GLM_MODEL", "glm-4.5v"),
+        default="glm-4.5v",
         description="GLM vision-capable default model",
+    )
+
+    BROWSER_BACKEND: str = Field(
+        default="auto",
+        description="Supported values: auto, camoufox, playwright",
     )
 
     EPIC_EMAIL: str = Field(default_factory=lambda: _env("EPIC_EMAIL"))
@@ -86,18 +77,10 @@ class EpicSettings(AgentConfig):
     DISABLE_BEZIER_TRAJECTORY: bool = Field(default=True)
     WAIT_FOR_CHALLENGE_VIEW_TO_RENDER_MS: int = Field(default=3000)
 
-    CHALLENGE_CLASSIFIER_MODEL: str = Field(
-        default_factory=lambda: _task_model("CHALLENGE_CLASSIFIER_MODEL", "gemini-2.5-flash")
-    )
-    IMAGE_CLASSIFIER_MODEL: str = Field(
-        default_factory=lambda: _task_model("IMAGE_CLASSIFIER_MODEL", "gemini-2.5-pro")
-    )
-    SPATIAL_POINT_REASONER_MODEL: str = Field(
-        default_factory=lambda: _task_model("SPATIAL_POINT_REASONER_MODEL", "gemini-2.5-pro")
-    )
-    SPATIAL_PATH_REASONER_MODEL: str = Field(
-        default_factory=lambda: _task_model("SPATIAL_PATH_REASONER_MODEL", "gemini-2.5-pro")
-    )
+    CHALLENGE_CLASSIFIER_MODEL: str = Field(default="")
+    IMAGE_CLASSIFIER_MODEL: str = Field(default="")
+    SPATIAL_POINT_REASONER_MODEL: str = Field(default="")
+    SPATIAL_PATH_REASONER_MODEL: str = Field(default="")
 
     cache_dir: Path = HCAPTCHA_DIR.joinpath(".cache")
     challenge_dir: Path = HCAPTCHA_DIR.joinpath(".challenge")
@@ -110,9 +93,40 @@ class EpicSettings(AgentConfig):
     CELERY_TASK_TIME_LIMIT: int = Field(default=1200)
     CELERY_TASK_SOFT_TIME_LIMIT: int = Field(default=900)
 
+    @model_validator(mode="after")
+    def _apply_runtime_defaults(self):
+        provider = (self.LLM_PROVIDER or "").strip().lower()
+        if provider not in {"gemini", "glm"}:
+            provider = "glm" if self.GLM_API_KEY else "gemini"
+        self.LLM_PROVIDER = provider
+
+        if self.GEMINI_API_KEY is None and self.GLM_API_KEY is not None:
+            self.GEMINI_API_KEY = self.GLM_API_KEY
+
+        provider_default = self.GLM_MODEL if provider == "glm" else self.GEMINI_MODEL
+        if not self.CHALLENGE_CLASSIFIER_MODEL:
+            self.CHALLENGE_CLASSIFIER_MODEL = provider_default
+        if not self.IMAGE_CLASSIFIER_MODEL:
+            self.IMAGE_CLASSIFIER_MODEL = provider_default
+        if not self.SPATIAL_POINT_REASONER_MODEL:
+            self.SPATIAL_POINT_REASONER_MODEL = provider_default
+        if not self.SPATIAL_PATH_REASONER_MODEL:
+            self.SPATIAL_PATH_REASONER_MODEL = provider_default
+
+        browser_backend = (self.BROWSER_BACKEND or "").strip().lower()
+        self.BROWSER_BACKEND = browser_backend or "auto"
+
+        return self
+
     @property
     def user_data_dir(self) -> Path:
-        target_ = USER_DATA_DIR.joinpath(self.EPIC_EMAIL)
+        target_ = self.user_data_dir_for("camoufox")
+        return target_
+
+    def user_data_dir_for(self, backend: str) -> Path:
+        backend = (backend or "camoufox").strip().lower()
+        suffix = f".{backend}"
+        target_ = USER_DATA_DIR.joinpath(f"{self.EPIC_EMAIL}{suffix}")
         target_.mkdir(parents=True, exist_ok=True)
         return target_
 
