@@ -65,3 +65,22 @@
 - 处理结果：
   - 识别 `privacy-policy correction` 特殊页面并给出明确错误提示。
   - 文档中补充说明：用户需要先用正常浏览器手动登录 Epic，完成该确认页后再重跑 workflow。
+
+### checkout 多选题与 challenge router 的 GLM 返回格式兼容问题
+
+- 现象：
+  - `Device not supported` 修复后，流程已经能进入 checkout。
+  - 但 checkout 安全校验阶段又出现新的结构化解析失败：
+    - `ImageAreaSelectChallenge` 缺少 `challenge_prompt` / `points`
+    - challenge router 有时只返回 `image_drag_multi`
+  - 最终日志表现为 `instant_checkout_unconfirmed` 或 checkout solve loop 反复失败。
+- 根因判断：
+  - `llm_adapter` 之前主要补了 drag/drop 的若干变体，但还没有覆盖 area-select 返回的矩形框数组。
+  - 同时 challenge router 返回的 `image_drag_multi` 是别名，当前路由识别只收 `image_drag_multiple`，导致 fallback 解析失败。
+- 改动文件：
+  - `app/extensions/llm_adapter.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 新增 area-select 矩形框归一化，把 `[[x_min, y_min, x_max, y_max], ...]` 和 `[{x_min, ...}, ...]` 转成 schema 需要的 `points`。
+  - 给缺失的 `challenge_prompt` / `inferred_rule` 自动补默认值。
+  - 为 `image_drag_multi` 增加别名映射，统一归一化成 `image_drag_multiple`。
