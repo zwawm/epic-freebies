@@ -121,3 +121,30 @@
   - 新增 area-select 矩形框归一化，把 `[[x_min, y_min, x_max, y_max], ...]` 和 `[{x_min, ...}, ...]` 转成 schema 需要的 `points`。
   - 给缺失的 `challenge_prompt` / `inferred_rule` 自动补默认值。
   - 为 `image_drag_multi` 增加别名映射，统一归一化成 `image_drag_multiple`。
+
+### `In Library` 已出现但仍被误判为 `click_no_effect`
+
+- 现象：
+  - 商品页点击 `Get` 后最终保存了 `purchase_debug/click_no_effect-*.txt`
+  - 但调试文本里正文已经明确出现 `In Library`
+- 根因判断：
+  - `_claim_state_reason()` 对按钮文案里的 `IN LIBRARY` 有识别，但页面正文级别的 claim markers 只收了 `IN YOUR LIBRARY` / `VIEW IN LIBRARY` 等变体，没有把最常见的 `IN LIBRARY` 放进去。
+- 改动文件：
+  - `app/services/epic_games_service.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 把正文级别的 `IN LIBRARY` 加入 claim markers。
+  - 这样即使按钮状态没被稳定拿到，只要页面正文已经切成 `In Library`，也会被识别成已领取，不再落到 `click_no_effect`。
+
+### 登录拖拽题返回裸坐标串时未被归一化
+
+- 现象：
+  - 登录阶段有时会返回 `{"answer": "1165,600,932,688"}`
+  - 之前日志里会报 `ImageDragDropChallenge` 缺少 `challenge_prompt` / `paths`
+- 根因判断：
+  - `llm_adapter` 之前支持括号坐标、JSON 对象、数组等 drag 格式，但没有覆盖最简单的裸 CSV 坐标串。
+- 改动文件：
+  - `app/extensions/llm_adapter.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 为 `x1,y1,x2,y2` 这类纯数字 CSV 形式补了 drag 坐标解析，统一归一化成 `paths`。

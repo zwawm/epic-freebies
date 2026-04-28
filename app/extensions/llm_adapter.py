@@ -202,6 +202,11 @@ def _extract_drag_points_from_text(text: str) -> tuple[dict[str, int], dict[str,
         (sx, sy), (tx, ty) = point_pairs
         return ({"x": int(sx), "y": int(sy)}, {"x": int(tx), "y": int(ty)})
 
+    csv_drag = re.fullmatch(r"\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*", stripped)
+    if csv_drag:
+        sx, sy, tx, ty = map(int, csv_drag.groups())
+        return ({"x": sx, "y": sy}, {"x": tx, "y": ty})
+
     return None
 
 
