@@ -78,16 +78,24 @@ Basic configuration and execution steps:
 
 ### 2. Configure Secrets
 
-Go to `Settings` -> `Secrets and variables` -> `Actions`, then fill in these five values first:
+Go to `Settings` -> `Secrets and variables` -> `Actions`.
+
+Required in all cases:
+
+| Secret | Example value |
+| --- | --- |
+| `EPIC_EMAIL` | your_epic_email@example.com |
+| `EPIC_PASSWORD` | your_epic_password |
+
+If you use `GLM`, start with this set:
 
 **If you plan to use `GLM_API_KEY`, make sure the related Zhipu account has already passed real-name verification, or the API may remain unavailable.**
 
 | Secret | Example value |
 | --- | --- |
-| `EPIC_EMAIL` | Your Epic email |
-| `EPIC_PASSWORD` | Your Epic password |
 | `LLM_PROVIDER` | glm |
 | `GLM_API_KEY` | Your Zhipu API key |
+| `GLM_BASE_URL` | https://open.bigmodel.cn/api/paas/v4 |
 | `GLM_MODEL` | glm-4.6v |
 
 Configuration page example:
@@ -95,13 +103,33 @@ Configuration page example:
 
 ![GitHub Actions Secrets example](docs/images/tutorial/step2-actions-secrets.png)
 
-Optional notes:
+If you use `Gemini / AiHubMix`, use this set:
 
-- Leave `GLM_BASE_URL` empty to use the default value.
-- `glm-4.6v` is the recommended `GLM_MODEL`; `glm-4.6v-flash` can fail during peak traffic.
-- Leave `CHALLENGE_CLASSIFIER_MODEL`, `IMAGE_CLASSIFIER_MODEL`, `SPATIAL_POINT_REASONER_MODEL`, and `SPATIAL_PATH_REASONER_MODEL` empty if you want them to follow `GLM_MODEL`.
-- If you want the Gemini route instead, set `LLM_PROVIDER=gemini` and configure `GEMINI_API_KEY`.
+| Secret | Example value |
+| --- | --- |
+| `LLM_PROVIDER` | gemini |
+| `GEMINI_API_KEY` | Your Gemini or AiHubMix key |
+| `GEMINI_BASE_URL` | https://aihubmix.com |
+| `GEMINI_MODEL` | gemini-2.5-pro |
+
+Notes:
+
+- The current codebase still supports the `Gemini / AiHubMix` route.
+- The variable name is `GEMINI_BASE_URL`, not `GEMINI_BASE_MODEL`.
+- For `GLM`, `glm-4.6v` is the recommended starting value; `glm-4.6v-flash` can fail during peak traffic.
+- For `Gemini / AiHubMix`, `GEMINI_MODEL=gemini-2.5-pro` is the recommended starting value.
+- If `CHALLENGE_CLASSIFIER_MODEL`, `IMAGE_CLASSIFIER_MODEL`, `SPATIAL_POINT_REASONER_MODEL`, and `SPATIAL_PATH_REASONER_MODEL` are left empty, they automatically follow the active provider default, meaning `GLM_MODEL` or `GEMINI_MODEL`.
+- If you do not want to split models by task yet, leave all four override fields empty.
 - The `GLM` path does not require an extra `GEMINI_API_KEY`.
+
+If you do want to override those four model fields explicitly, use values like these:
+
+| Secret | GLM example | Gemini / AiHubMix example |
+| --- | --- | --- |
+| `CHALLENGE_CLASSIFIER_MODEL` | empty or `glm-4.6v` | empty or `gemini-2.5-pro` |
+| `IMAGE_CLASSIFIER_MODEL` | empty or `glm-4.6v` | empty or `gemini-2.5-pro` |
+| `SPATIAL_POINT_REASONER_MODEL` | empty or `glm-4.6v` | empty or `gemini-2.5-pro` |
+| `SPATIAL_PATH_REASONER_MODEL` | empty or `glm-4.6v` | empty or `gemini-2.5-pro` |
 
 ### 3. Run the workflow manually once
 

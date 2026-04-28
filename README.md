@@ -78,16 +78,24 @@
 
 ### 2. 配置 Secrets
 
-进入 `Settings` -> `Secrets and variables` -> `Actions`，先填这 5 个：
+进入 `Settings` -> `Secrets and variables` -> `Actions`。
+
+必须配置：
+
+| Secret | 示例值 |
+| --- | --- |
+| `EPIC_EMAIL` | your_epic_email@example.com |
+| `EPIC_PASSWORD` | your_epic_password |
+
+如果你使用 `GLM`，建议先按下面这组填写：
 
 **如果你使用 `GLM_API_KEY`，请先确认对应智谱账号已经完成实名认证，否则 API 很可能不可用。**
 
 | Secret | 示例值 |
 | --- | --- |
-| `EPIC_EMAIL` | 你的 Epic 邮箱 |
-| `EPIC_PASSWORD` | 你的 Epic 密码 |
 | `LLM_PROVIDER` | glm |
 | `GLM_API_KEY` | 你的智谱 API Key |
+| `GLM_BASE_URL` | https://open.bigmodel.cn/api/paas/v4 |
 | `GLM_MODEL` | glm-4.6v |
 
 配置页面示例：
@@ -95,13 +103,33 @@
 
 ![GitHub Actions Secrets 配置示例](docs/images/tutorial/step2-actions-secrets.png)
 
-可选项：
+如果你使用 `Gemini / AiHubMix`，请按下面这组填写：
 
-- `GLM_BASE_URL` 留空即可使用默认值。
-- 推荐把 `GLM_MODEL` 设为 `glm-4.6v`；`glm-4.6v-flash` 在高峰期可能报“该模型当前访问量过大，请您稍后重试”。
-- `CHALLENGE_CLASSIFIER_MODEL`、`IMAGE_CLASSIFIER_MODEL`、`SPATIAL_POINT_REASONER_MODEL`、`SPATIAL_PATH_REASONER_MODEL` 留空即可跟随 `GLM_MODEL`。
-- 如果要改 Gemini 路线，把 `LLM_PROVIDER` 设为 `gemini` 并配置 `GEMINI_API_KEY`。
+| Secret | 示例值 |
+| --- | --- |
+| `LLM_PROVIDER` | gemini |
+| `GEMINI_API_KEY` | 你的 Gemini 或 AiHubMix Key |
+| `GEMINI_BASE_URL` | https://aihubmix.com |
+| `GEMINI_MODEL` | gemini-2.5-pro |
+
+说明：
+
+- 当前代码仍然支持 `Gemini / AiHubMix` 路线。
+- 变量名是 `GEMINI_BASE_URL`，不是 `GEMINI_BASE_MODEL`。
+- 对 `GLM` 路线，推荐把 `GLM_MODEL` 设为 `glm-4.6v`；`glm-4.6v-flash` 在高峰期可能报“该模型当前访问量过大，请您稍后重试”。
+- 对 `Gemini / AiHubMix` 路线，建议先用 `GEMINI_MODEL=gemini-2.5-pro` 作为起步配置。
+- `CHALLENGE_CLASSIFIER_MODEL`、`IMAGE_CLASSIFIER_MODEL`、`SPATIAL_POINT_REASONER_MODEL`、`SPATIAL_PATH_REASONER_MODEL` 如果留空，会自动跟随当前 provider 的默认模型，也就是 `GLM_MODEL` 或 `GEMINI_MODEL`。
+- 如果你暂时不想细分模型，最简单的做法就是让上面 4 个覆盖项全部留空。
 - 走 `GLM` 路线时不需要额外再填 `GEMINI_API_KEY`。
+
+如果你确实要单独覆盖这 4 个模型，可以直接照下面填写：
+
+| Secret | GLM 示例值 | Gemini / AiHubMix 示例值 |
+| --- | --- | --- |
+| `CHALLENGE_CLASSIFIER_MODEL` | 留空或 `glm-4.6v` | 留空或 `gemini-2.5-pro` |
+| `IMAGE_CLASSIFIER_MODEL` | 留空或 `glm-4.6v` | 留空或 `gemini-2.5-pro` |
+| `SPATIAL_POINT_REASONER_MODEL` | 留空或 `glm-4.6v` | 留空或 `gemini-2.5-pro` |
+| `SPATIAL_PATH_REASONER_MODEL` | 留空或 `glm-4.6v` | 留空或 `gemini-2.5-pro` |
 
 ### 3. 手动运行一次
 

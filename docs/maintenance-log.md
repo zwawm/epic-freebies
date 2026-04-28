@@ -143,6 +143,24 @@
   - 将 `pyproject.toml` 中的作者和项目 URL 切换为当前维护仓库。
   - 将开发记录中的旧工作目录表述同步为当前仓库路径。
 
+### 补充 Gemini/AiHubMix 配置示例和模型覆盖说明
+
+- 现象：
+  - 当前代码仍支持 `Gemini / AiHubMix`，但主 README 对这一路线的配置说明过于简略。
+  - 用户难以从现有文案中直接判断 `GEMINI_BASE_URL`、`GEMINI_MODEL` 以及 4 个任务模型覆盖项应该如何填写。
+- 根因判断：
+  - 详细说明主要分散在 workflow 文档和 `.env.example`，主 README 的快速开始部分没有把 Gemini/AiHubMix 路线补成可直接照填的示例。
+- 改动文件：
+  - `README.md`
+  - `README.en.md`
+  - `.env.example`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 在中英文 README 的 Secrets 配置段增加 `GLM` 和 `Gemini / AiHubMix` 两组明确示例值。
+  - 明确说明变量名是 `GEMINI_BASE_URL`，并补充推荐起步模型值。
+  - 补充 4 个任务模型覆盖项的回落规则和示例值。
+  - 在 `.env.example` 中补充覆盖项的填写说明，降低配置门槛。
+
 ### 重新补回 Codex 的 Karpathy 风格工作准则
 
 - 现象：
